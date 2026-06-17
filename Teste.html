@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bússola Eleitoral - Análise Parlamentar</title>
+    <!-- Tailwind CSS para estilização moderna e responsiva -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* Estilização para caminhos de mapas interativos */
+        .map-region, .map-state {
+            cursor: pointer;
+            transition: fill 0.2s, transform 0.2s, opacity 0.2s;
+        }
+        .map-region:hover, .map-state:hover {
+            fill: #2563eb !important; /* Azul destacado no hover */
+            opacity: 0.9;
+        }
+        /* Ocultar elementos sem quebrar o fluxo */
+        .hidden { display: none; }
+        
+        /* Customização de scrollbar para a lista densa */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-between p-4 sm:p-6 font-sans">
+
+    <!-- Cabeçalho Principal -->
+    <header class="text-center my-4">
+        <h1 class="text-3xl font-bold text-blue-400 tracking-tight">Bússola Eleitoral</h1>
+        <p class="text-gray-400 mt-2 text-sm sm:text-base" id="instruction-text">Selecione uma região no mapa para começar</p>
+    </header>
+
+    <!-- CONTAINER CENTRAL INTERATIVO -->
+    <main class="w-full max-w-3xl flex flex-col items-center justify-center bg-gray-800 p-5 sm:p-7 rounded-2xl shadow-2xl border border-gray-700 min-h-[480px] transition-all duration-300">
+        
+        <!-- TELA 1: MAPA DO BRASIL (SVG Simplificado) -->
+        <div id="brazil-map-container" class="w-full flex flex-col items-center animate-fade-in">
+            <svg id="brazil-map" viewBox="0 0 400 400" class="w-72 h-72 sm:w-80 sm:h-80">
+                <!-- Região Norte -->
+                <path class="map-region" data-region="Norte" fill="#065f46" d="M 50,50 L 220,50 L 200,180 L 50,150 Z" />
+                <text x="110" y="100" fill="white" font-weight="bold" font-size="12" pointer-events="none">NORTE</text>
+                
+                <!-- Região Nordeste -->
+                <path class="map-region" data-region="Nordeste" fill="#1e3a8a" d="M 220,50 L 350,100 L 320,220 L 200,180 Z" />
+                <text x="250" y="130" fill="white" font-weight="bold" font-size="12" pointer-events="none">NORDESTE</text>
+                
+                <!-- Região Centro-Oeste -->
+                <path class="map-region" data-region="Centro-Oeste" fill="#854d0e" d="M 120,170 L 220,180 L 240,280 L 130,270 Z" />
+                <text x="145" y="230" fill="white" font-weight="bold" font-size="12" pointer-events="none">CENTRO-OESTE</text>
+                
+                <!-- Região Sudeste -->
+                <path class="map-region" data-region="Sudeste" fill="#991b1b" d="M 220,180 L 320,220 L 290,320 L 210,280 Z" />
+                <text x="245" y="260" fill="white" font-weight="bold" font-size="12" pointer-events="none">SUDESTE</text>
+                
+                <!-- Região Sul -->
+                <path class="map-region" data-region="Sul" fill="#374151" d="M 170,280 L 240,280 L 210,370 L 160,350 Z" />
+                <text x="185" y="320" fill="white" font-weight="bold" font-size="12" pointer-events="none">SUL</text>
+            </svg>
+        </div>
+
+        <!-- TELA 2: MAPA REGIONAL (ESTADOS) -->
+        <div id="regional-map-container" class="w-full flex flex-col items-center hidden">
+            <button id="btn-back-to-brazil" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 self-start transition cursor-pointer">
+                ← Voltar para o Mapa do Brasil
+            </button>
+            <h2 id="regional-title" class="text-xl font-semibold text-gray-200 mb-4">Região Selecionada</h2>
+            
+            <svg id="regional-map" viewBox="0 0 400 320" class="w-full max-w-md h-64">
+                <!-- Injetado dinamicamente via JavaScript -->
+            </svg>
+        </div>
+
+        <!-- TELA 3: NOVA PROPOSTA - TRIAGEM RÁPIDA (CARDS EXPRESS) -->
+        <div id="express-themes-container" class="w-full hidden animate-fade-in">
+            <button id="btn-back-to-states" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition cursor-pointer">
+                ← Voltar para Estados
+            </button>
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-bold text-gray-100">Quais grandes temas mais chamam sua atenção?</h2>
+                <p class="text-xs sm:text-sm text-gray-400 mt-1">Selecione os botões que deseja analisar. Clique diretamente neles.</p>
+            </div>
+
+            <!-- Grid de Botões/Cards Inteiramente Selecionáveis -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🌱 PEC Desmonte do Meio-Ambiente</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+
+                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🛡️ PEC Segurança Pública</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+
+                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🏛️ PEC Da Blindagem</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+
+                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🏖️ PEC Privatização das Praias</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+
+                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🗳️ Aumento de Gastos nas Eleições</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+
+                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">⚡ PEC Encarecer Conta de Energia</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+
+                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🧩 Fim de Benefícios a Autistas</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+
+                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">💼 Precarização do FGTS</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+
+                <button onclick="toggleCardTheme(this)" class="sm:col-span-2 flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
+                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🏦 CPI do Banco Master</span>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
+                </button>
+            </div>
+
+            <!-- Botões de Ação Inferiores da Triagem Rápida -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-700 pt-5">
+                <button id="btn-trigger-advanced" class="text-sm text-blue-400 hover:text-blue-300 font-medium hover:underline transition order-2 sm:order-1 cursor-pointer">
+                    🔍 Quero escolher mais temas detalhados (Lista Completa)
+                </button>
+                
+                <button onclick="alert('Iniciando cálculo de afinidade com os macro-temas selecionados!')" class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-md transition order-1 sm:order-2 cursor-pointer">
+                    Seguir com estes →
+                </button>
+            </div>
+        </div>
+
+        <!-- TELA 4: LISTA COMPLETA DETALHADA (Avançado - Escondido por padrão) -->
+        <div id="advanced-themes-container" class="w-full hidden animate-fade-in">
+            <button id="btn-back-to-express" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition cursor-pointer">
+                ← Voltar para Seleção Rápida
+            </button>
+            <h2 class="text-lg font-bold text-gray-100 mb-1 text-center">Lista Geral de Pautas Parlamentares</h2>
+            <p class="text-xs text-gray-400 text-center mb-5">Personalização avançada: marque ou desmarque detalhadamente os subitens</p>
+            
+            <div class="space-y-5 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
+                
+                <!-- BLOCO 1: MEIO AMBIENTE -->
+                <div class="bg-gray-750 border border-gray-700 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-emerald-400 mb-2">🏛️ 1. Meio Ambiente e Emergência Climática</h3>
+                    <div class="space-y-2 text-xs text-gray-300">
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-emerald-500"><span>Derrubada do veto à Lei Geral do Licenciamento Ambiental (Autolicenciamento).</span></label>
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-emerald-500"><span>Exclusão de consulta a povos indígenas no licenciamento de infraestrutura colada às reservas.</span></label>
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-emerald-500"><span>PEC das Praias (PEC 03/2022): Transferência de terrenos da Marinha para entes privados.</span></label>
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-emerald-500"><span>PL do Veneno (PL 1459/98): Flexibilização das regras de liberação de agrotóxicos.</span></label>
+                    </div>
+                </div>
+
+                <!-- BLOCO 2: TRABALHO E RENDA -->
+                <div class="bg-gray-750 border border-gray-700 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-amber-400 mb-2">💼 2. Direitos Trabalhistas e Renda</h3>
+                    <div class="space-y-2 text-xs text-gray-300">
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-amber-500"><span>Oposição ferrenha à PEC do Fim da Escala 6x1 no comércio e indústria.</span></label>
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-amber-500"><span>Flexibilização das multas rescisórias e proteções contratuais do FGTS.</span></label>
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-amber-500"><span>Estímulo à "Pejotização" irrestrita para mascarar vínculos da CLT.</span></label>
+                    </div>
+                </div>
+
+                <!-- BLOCO 3: SEGURANÇA E DIREITOS -->
+                <div class="bg-gray-750 border border-gray-700 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-red-400 mb-2">🛡️ 3. Segurança Pública e Direitos Humanos</h3>
+                    <div class="space-y-2 text-xs text-gray-300">
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-red-500"><span>Fim integral das saídas temporárias de presos ("saidinhas").</span></label>
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-red-500"><span>PL de Equiparação do Aborto após 22 semanas ao crime de homicídio simples.</span></label>
+                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-red-500"><span>PEC das Drogas: Criminalização de qualquer porte ou posse de entorpecentes.</span></label>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="mt-5 flex justify-end">
+                <button onclick="alert('Processando sua árvore completa de pautas personalizadas!')" class="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-bold transition shadow-md cursor-pointer">
+                    Finalizar Filtro Avançado →
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL GLOBAL DE CONFIRMAÇÃO -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50 animate-fade-in">
+        <div class="bg-gray-800 border border-gray-700 p-6 rounded-2xl max-w-xs w-full text-center shadow-2xl">
+            <h3 id="modal-text" class="text-base text-gray-200 mb-5 font-medium">Você confirma a seleção?</h3>
+            <div class="flex justify-center gap-3">
+                <button id="modal-btn-cancel" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer">
+                    Voltar
+                </button>
+                <button id="modal-btn-confirm" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs sm:text-sm font-semibold text-white transition shadow cursor-pointer">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="text-xs text-gray-500 my-4 text-center">
+        Bússola Eleitoral 2026 • Design focado em conversão e usabilidade rápida
+    </footer>
+
+    <!-- LOGICA JAVASCRIPT INTEGRADA -->
+    <script>
+        // Seletores de Elementos Dom
+        const brazilMapContainer = document.getElementById('brazil-map-container');
+        const regionalMapContainer = document.getElementById('regional-map-container');
+        const expressThemesContainer = document.getElementById('express-themes-container');
+        const advancedThemesContainer = document.getElementById('advanced-themes-container');
+        
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const modalText = document.getElementById('modal-text');
+        const modalBtnCancel = document.getElementById('modal-btn-cancel');
+        const modalBtnConfirm = document.getElementById('modal-btn-confirm');
+        
+        const btnBackToBrazil = document.getElementById('btn-back-to-brazil');
+        const btnBackToStates = document.getElementById('btn-back-to-states');
+        const btnTriggerAdvanced = document.getElementById('btn-trigger-advanced');
+        const btnBackToExpress = document.getElementById('btn-back-to-express');
+        
+        const regionalTitle = document.getElementById('regional-title');
+        const regionalMapSvg = document.getElementById('regional-map');
+        const instructionText = document.getElementById('instruction-text');
+
+        // Contexto de Navegação e Estado da Aplicação
+        let currentSelectedRegion = '';
+        let selectionContext = { type: '', value: '' };
+
+        // Banco de dados simulado de caminhos SVG estendidos por estado das regiões brasileiras
+        const statesByRegion = {
+            "Norte": [
+                { id: "AM", name: "Amazonas", fill: "#064e3b", d: "M 20,60 L 140,60 L 120,160 L 20,140 Z", tx: 70, ty: 105 },
+                { id: "PA", name: "Pará", fill: "#047857", d: "M 140,60 L 260,60 L 240,160 L 120,160 Z", tx: 190, ty: 105 },
+                { id: "AP", name: "Amapá", fill: "#065f46", d: "M 220,15 L 260,15 L 260,60 L 200,60 Z", tx: 230, ty: 40 },
+                { id: "RR", name: "Roraima", fill: "#0f766e", d: "M 80,15 L 140,15 L 140,60 L 80,60 Z", tx: 110, ty: 42 },
+                { id: "AC", name: "Acre", fill: "#115e59", d: "M 20,140 L 60,140 L 50,190 L 10,170 Z", tx: 35, ty: 165 },
+                { id: "RO", name: "Rondônia", fill: "#134e4a", d: "M 60,140 L 120,160 L 110,210 L 50,190 Z", tx: 85, ty: 180 },
+                { id: "TO", name: "Tocantins", fill: "#022c22", d: "M 240,160 L 280,160 L 270,250 L 230,230 Z", tx: 255, ty: 200 }
+            ],
+            "Nordeste": [
+                { id: "MA", name: "Maranhão", fill: "#1e3a8a", d: "M 40,60 L 120,60 L 100,160 L 40,140 Z", tx: 75, ty: 105 },
+                { id: "PI", name: "Piauí", fill: "#1d4ed8", d: "M 120,60 L 170,80 L 150,180 L 100,160 Z", tx: 135, ty: 125 },
+                { id: "CE", name: "Ceará", fill: "#2563eb", d: "M 170,80 L 230,90 L 210,150 L 160,140 Z", tx: 195, ty: 120 },
+                { id: "RN", name: "Rio Grande do Norte", fill: "#1e40af", d: "M 230,90 L 290,100 L 280,130 L 220,120 Z", tx: 255, ty: 112 },
+                { id: "PB", name: "Paraíba", fill: "#3b82f6", d: "M 220,120 L 280,130 L 270,160 L 210,150 Z", tx: 245, ty: 142 },
+                { id: "PE", name: "Pernambuco", fill: "#1c3d5a", d: "M 160,140 L 270,160 L 260,190 L 150,170 Z", tx: 210, ty: 170 },
+                { id: "AL", name: "Alagoas", fill: "#60a5fa", d: "M 230,190 L 260,190 L 255,215 L 225,215 Z", tx: 242, ty: 205 },
+                { id: "SE", name: "Sergipe", fill: "#2563eb", d: "M 220,215 L 245,215 L 240,235 L 215,235 Z", tx: 230, ty: 228 },
+                { id: "BA", name: "Bahia", fill: "#172554", d: "M 100,160 L 150,180 L 225,215 L 180,290 L 90,250 Z", tx: 145, ty: 225 }
+            ],
+            "Centro-Oeste": [
+                { id: "MT", name: "Mato Grosso", fill: "#78350f", d: "M 40,50 L 180,50 L 160,170 L 40,150 Z", tx: 105, ty: 105 },
+                { id: "GO", name: "Goiás", fill: "#b45309", d: "M 180,90 L 270,90 L 250,200 L 160,170 Z", tx: 215, ty: 140 },
+                { id: "DF", name: "Distrito Federal", fill: "#f59e0b", d: "M 220,125 L 245,125 L 245,145 L 220,145 Z", tx: 232, ty: 138 },
+                { id: "MS", name: "Mato Grosso do Sul", fill: "#451a03", d: "M 40,150 L 160,170 L 130,260 L 50,230 Z", tx: 95, ty: 205 }
+            ],
+            "Sudeste": [
+                { id: "MG", name: "Minas Gerais", fill: "#7f1d1d", d: "M 60,40 L 200,40 L 180,160 L 50,130 Z", tx: 125, ty: 95 },
+                { id: "ES", name: "Espírito Santo", fill: "#b91c1c", d: "M 200,80 L 240,90 L 230,140 L 180,120 Z", tx: 212, ty: 112 },
+                { id: "RJ", name: "Rio de Janeiro", fill: "#ef4444", d: "M 140,150 L 210,155 L 195,190 L 130,180 Z", tx: 170, ty: 172 },
+                { id: "SP", name: "São Paulo", fill: "#991b1b", d: "M 30,125 L 140,150 L 110,230 L 20,190 Z", tx: 75, ty: 175 }
+            ],
+            "Sul": [
+                { id: "PR", name: "Paraná", fill: "#1f2937", d: "M 80,40 L 200,40 L 180,100 L 70,90 Z", tx: 135, ty: 70 },
+                { id: "SC", name: "Santa Catarina", fill: "#4b5563", d: "M 90,90 L 180,100 L 160,150 L 80,135 Z", tx: 135, ty: 120 },
+                { id: "RS", name: "Rio Grande do Sul", fill: "#111827", d: "M 60,130 L 160,145 L 130,245 L 40,210 Z", tx: 100, ty: 185 }
+            ]
+        };
+
+        // Disparador de Seleção de Região (Tela Inicial)
+        document.querySelectorAll('.map-region').forEach(element => {
+            element.addEventListener('click', (e) => {
+                const selectedRegion = e.target.getAttribute('data-region');
+                invokeModal('region', selectedRegion, `Você selecionou a região ${selectedRegion}. Deseja ver os estados?`);
+            });
+        });
+
+        // Controle e Chamada do Modal Centralizado
+        function invokeModal(type, value, message) {
+            selectionContext.type = type;
+            selectionContext.value = value;
+            modalText.textContent = message;
+            confirmationModal.classList.remove('hidden');
+        }
+
+        modalBtnCancel.addEventListener('click', () => {
+            confirmationModal.classList.add('hidden');
+        });
+
+        modalBtnConfirm.addEventListener('click', () => {
+            confirmationModal.classList.add('hidden');
+            if (selectionContext.type === 'region') {
+                currentSelectedRegion = selectionContext.value;
+                renderRegionalMap(selectionContext.value);
+            } else if (selectionContext.type === 'state') {
+                showExpressThemes();
+            }
+        });
+
+        // Transição e renderização da Tela 2 (Estados)
+        function renderRegionalMap(region) {
+            brazilMapContainer.classList.add('hidden');
+            expressThemesContainer.classList.add('hidden');
+            advancedThemesContainer.classList.add('hidden');
+            regionalMapContainer.classList.remove('hidden');
+            
+            regionalTitle.textContent = `Estados da Região ${region}`;
+            instructionText.textContent = "Clique sobre a sigla ou o território do estado desejado";
+
+            regionalMapSvg.innerHTML = '';
+            const targetedStates = statesByRegion[region] || [];
+
+            targetedStates.forEach(state => {
+                const statePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                statePath.setAttribute("d", state.d);
+                statePath.setAttribute("fill", state.fill);
+                statePath.setAttribute("class", "map-state");
+                statePath.setAttribute("data-state", state.name);
+                
+                const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                labelText.setAttribute("x", state.tx);
+                labelText.setAttribute("y", state.ty);
+                labelText.setAttribute("fill", "white");
+                labelText.setAttribute("font-weight", "bold");
+                labelText.setAttribute("font-size", "11");
+                labelText.setAttribute("pointer-events", "none");
+                labelText.setAttribute("text-anchor", "middle");
+                labelText.textContent = state.id;
+
+                statePath.addEventListener('click', (e) => {
+                    const selectedStateName = e.target.getAttribute('data-state');
+                    invokeModal('state', selectedStateName, `Deseja analisar os parlamentares do estado: ${selectedStateName}?`);
+                });
+
+                regionalMapSvg.appendChild(statePath);
+                regionalMapSvg.appendChild(labelText);
+            });
+        }
+
+        // Nova mecânica sugerida: Alternância de Seleção do CARD INTEIRO (Toggle Chips)
+        function toggleCardTheme(btnElement) {
+            const indicatorCircle = btnElement.querySelector('.checked-indicator');
+            
+            if (btnElement.classList.contains('border-blue-500')) {
+                // Estado: Desmarcado
+                btnElement.classList.remove('border-blue-500', 'bg-blue-950/40');
+                btnElement.classList.add('border-transparent');
+                indicatorCircle.classList.remove('bg-blue-500', 'border-blue-500', 'text-white');
+                indicatorCircle.classList.add('border-gray-500', 'text-transparent');
+            } else {
+                // Estado: Marcado/Selecionado
+                btnElement.classList.remove('border-transparent');
+                btnElement.classList.add('border-blue-500', 'bg-blue-950/40');
+                indicatorCircle.classList.remove('border-gray-500', 'text-transparent');
+                indicatorCircle.classList.add('bg-blue-500', 'border-blue-500', 'text-white');
+            }
+        }
+
+        // Navegação das telas de Temas
+        function showExpressThemes() {
+            regionalMapContainer.classList.add('hidden');
+            brazilMapContainer.classList.add('hidden');
+            advancedThemesContainer.classList.add('hidden');
+            expressThemesContainer.classList.remove('hidden');
+            instructionText.textContent = "Escolha rápida de pautas relevantes";
+        }
+
+        btnTriggerAdvanced.addEventListener('click', () => {
+            expressThemesContainer.classList.add('hidden');
+            advancedThemesContainer.classList.remove('hidden');
+            instructionText.textContent = "Refinamento minucioso dos eixos políticos";
+        });
+
+        // Botões de Retorno/Voltar
+        btnBackToBrazil.addEventListener('click', () => {
+            regionalMapContainer.classList.add('hidden');
+            brazilMapContainer.classList.remove('hidden');
+            instructionText.textContent = "Selecione uma região no mapa para começar";
+        });
+
+        btnBackToStates.addEventListener('click', () => {
+            expressThemesContainer.classList.add('hidden');
+            renderRegionalMap(currentSelectedRegion);
+        });
+
+        btnBackToExpress.addEventListener('click', () => {
+            advancedThemesContainer.classList.add('hidden');
+            expressThemesContainer.classList.remove('hidden');
+            instructionText.textContent = "Escolha rápida de pautas relevantes";
+        });
+    </script>
+</body>
+</html>
