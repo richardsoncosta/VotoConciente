@@ -19,7 +19,7 @@
         /* Ocultar elementos sem quebrar o fluxo */
         .hidden { display: none; }
         
-        /* Customização de scrollbar para a lista densa */
+        /* Customização de scrollbar para as listas densas */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
         }
@@ -84,7 +84,7 @@
             </svg>
         </div>
 
-        <!-- TELA 3: NOVA PROPOSTA - TRIAGEM RÁPIDA (CARDS EXPRESS) -->
+        <!-- TELA 3: TRIAGEM RÁPIDA (CARDS EXPRESS) -->
         <div id="express-themes-container" class="w-full hidden animate-fade-in">
             <button id="btn-back-to-states" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition cursor-pointer">
                 ← Voltar para Estados
@@ -148,13 +148,13 @@
                     🔍 Quero escolher mais temas detalhados (Lista Completa)
                 </button>
                 
-                <button onclick="alert('Iniciando cálculo de afinidade com os macro-temas selecionados!')" class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-md transition order-1 sm:order-2 cursor-pointer">
+                <button onclick="processarResultados()" class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-md transition order-1 sm:order-2 cursor-pointer">
                     Seguir com estes →
                 </button>
             </div>
         </div>
 
-        <!-- TELA 4: LISTA COMPLETA DETALHADA (Avançado - Escondido por padrão) -->
+        <!-- TELA 4: LISTA COMPLETA DETALHADA -->
         <div id="advanced-themes-container" class="w-full hidden animate-fade-in">
             <button id="btn-back-to-express" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition cursor-pointer">
                 ← Voltar para Seleção Rápida
@@ -198,9 +198,25 @@
             </div>
 
             <div class="mt-5 flex justify-end">
-                <button onclick="alert('Processando sua árvore completa de pautas personalizadas!')" class="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-bold transition shadow-md cursor-pointer">
+                <button onclick="processarResultados()" class="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-bold transition shadow-md cursor-pointer">
                     Finalizar Filtro Avançado →
                 </button>
+            </div>
+        </div>
+
+        <!-- TELA 5: EXIBIÇÃO DA BANCADA DA PARAÍBA -->
+        <div id="parlamentares-pb-container" class="w-full hidden animate-fade-in">
+            <button id="btn-back-to-themes" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition cursor-pointer">
+                ← Voltar para seleção de pautas
+            </button>
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-blue-400">Bancada Federal da Paraíba</h2>
+                <p class="text-xs text-gray-400 mt-1">Perfil e histórico dos 12 deputados federais em exercício ativo.</p>
+            </div>
+
+            <!-- Grid de Perfis dos Parlamentares -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar" id="parlamentares-grid">
+                <!-- Injetado dinamicamente via JS a partir do mapeamento -->
             </div>
         </div>
 
@@ -223,7 +239,7 @@
 
     <!-- Rodapé -->
     <footer class="text-xs text-gray-500 my-4 text-center">
-        Bússola Eleitoral 2026 • Design focado em conversão e usabilidade rápida
+        Bússola Eleitoral 2026 • Filtros dinâmicos estaduais aplicados
     </footer>
 
     <!-- LOGICA JAVASCRIPT INTEGRADA -->
@@ -233,6 +249,8 @@
         const regionalMapContainer = document.getElementById('regional-map-container');
         const expressThemesContainer = document.getElementById('express-themes-container');
         const advancedThemesContainer = document.getElementById('advanced-themes-container');
+        const parlamentaresPbContainer = document.getElementById('parlamentares-pb-container');
+        const parlamentaresGrid = document.getElementById('parlamentares-grid');
         
         const confirmationModal = document.getElementById('confirmation-modal');
         const modalText = document.getElementById('modal-text');
@@ -243,6 +261,7 @@
         const btnBackToStates = document.getElementById('btn-back-to-states');
         const btnTriggerAdvanced = document.getElementById('btn-trigger-advanced');
         const btnBackToExpress = document.getElementById('btn-back-to-express');
+        const btnBackToThemes = document.getElementById('btn-back-to-themes');
         
         const regionalTitle = document.getElementById('regional-title');
         const regionalMapSvg = document.getElementById('regional-map');
@@ -250,19 +269,27 @@
 
         // Contexto de Navegação e Estado da Aplicação
         let currentSelectedRegion = '';
+        let currentSelectedState = '';
         let selectionContext = { type: '', value: '' };
 
-        // Banco de dados simulado de caminhos SVG estendidos por estado das regiões brasileiras
+        // Dados estáticos dos parlamentares da Paraíba fornecidos pelo levantamento
+        const dadosParaiba = [
+            { nome: "Aguinaldo Ribeiro", partido: "PP", tempo: "16 anos", mandatos: "2010, 2014, 2018 e 2022", outros: "Foi Deputado Estadual por 8 anos (2003 a 2010). (Também foi Ministro das Cidades entre 2012 e 2014).", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Cabo Gilberto Silva", partido: "PL", tempo: "4 anos", mandatos: "2022", outros: "Foi Deputado Estadual por 4 anos (2019 a 2023).", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Dr. Damião", partido: "União Brasil", tempo: "20 anos", mandatos: "5º mandato; eleito em 2006, 2010, 2014, 2018 e 2022", outros: "Não ocupou cargos majoritários ou legislativos de base antes de chegar à Câmara.", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Gervásio Maia", partido: "PSB", tempo: "8 anos", mandatos: "2018 e reeleito em 2022", outros: "Foi Deputado Estadual por 16 anos (quatro mandatos, de 2003 a 2019), chegando a presidir a ALPB.", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Hugo Motta", partido: "Republicanos", tempo: "16 anos", mandatos: "2010, 2014, 2018 e 2022", outros: "Nenhum anterior. Tornou-se o deputado mais jovem do país ao ser eleito aos 21 anos.", status: "Não concorrendo", statusClass: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+            { nome: "Luiz Couto", partido: "PT", tempo: "20 anos", mandatos: "5º mandato; eleito em 2002, 2006, 2010, 2014 e retornou em 2022", outros: "Foi Deputado Estadual por 8 anos (1995 a 2003).", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Mersinho Lucena", partido: "PSD", tempo: "4 anos", mandatos: "2022", outros: "Foi Vice-Prefeito de Cabedelo por 2 anos (2021 a 2022, quando renunciou para concorrer à Câmara).", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Romero Rodrigues", partido: "Podemos", tempo: "8 anos", mandatos: "Mandato de 2011 a 2012 (interrompido para o executivo municipal) e retornou em 2022", outros: "Foi Vereador de Campina Grande (14 anos), Deputado Estadual (5 anos) e Prefeito de Campina Grande por 8 anos.", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Ruy Carneiro", partido: "Podemos", tempo: "12 anos", mandatos: "3º mandato; eleito em 2010, 2018 e 2022", outros: "Foi Vereador de João Pessoa por 12 anos e Deputado Estadual por 4 anos.", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Wellington Roberto", partido: "PSD", tempo: "24 anos", mandatos: "6º mandato consecutivo desde 2002", outros: "Foi Senador pela Paraíba por 2 anos (assumiu como suplente de Humberto Lucena entre 1998 e 2000).", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Raniery Paulino", partido: "Republicanos (Suplente)", tempo: "Cerca de 2 anos", mandatos: "Assumiu devido à licença do titular Murilo Galdino", outros: "Foi Deputado Estadual por 16 anos (quatro mandatos na ALPB, de 2007 a 2023).", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" },
+            { nome: "Valdir Trindade", partido: "Republicanos (Suplente)", tempo: "Menos de 2 anos", mandatos: "Assumiu com o afastamento do titular Wilson Santiago", outros: "Atua fortemente nos bastidores de lideranças religiosas e comunitárias.", status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30" }
+        ];
+
+        // Banco de dados simulado de mapas regionais
         const statesByRegion = {
-            "Norte": [
-                { id: "AM", name: "Amazonas", fill: "#064e3b", d: "M 20,60 L 140,60 L 120,160 L 20,140 Z", tx: 70, ty: 105 },
-                { id: "PA", name: "Pará", fill: "#047857", d: "M 140,60 L 260,60 L 240,160 L 120,160 Z", tx: 190, ty: 105 },
-                { id: "AP", name: "Amapá", fill: "#065f46", d: "M 220,15 L 260,15 L 260,60 L 200,60 Z", tx: 230, ty: 40 },
-                { id: "RR", name: "Roraima", fill: "#0f766e", d: "M 80,15 L 140,15 L 140,60 L 80,60 Z", tx: 110, ty: 42 },
-                { id: "AC", name: "Acre", fill: "#115e59", d: "M 20,140 L 60,140 L 50,190 L 10,170 Z", tx: 35, ty: 165 },
-                { id: "RO", name: "Rondônia", fill: "#134e4a", d: "M 60,140 L 120,160 L 110,210 L 50,190 Z", tx: 85, ty: 180 },
-                { id: "TO", name: "Tocantins", fill: "#022c22", d: "M 240,160 L 280,160 L 270,250 L 230,230 Z", tx: 255, ty: 200 }
-            ],
             "Nordeste": [
                 { id: "MA", name: "Maranhão", fill: "#1e3a8a", d: "M 40,60 L 120,60 L 100,160 L 40,140 Z", tx: 75, ty: 105 },
                 { id: "PI", name: "Piauí", fill: "#1d4ed8", d: "M 120,60 L 170,80 L 150,180 L 100,160 Z", tx: 135, ty: 125 },
@@ -274,23 +301,10 @@
                 { id: "SE", name: "Sergipe", fill: "#2563eb", d: "M 220,215 L 245,215 L 240,235 L 215,235 Z", tx: 230, ty: 228 },
                 { id: "BA", name: "Bahia", fill: "#172554", d: "M 100,160 L 150,180 L 225,215 L 180,290 L 90,250 Z", tx: 145, ty: 225 }
             ],
-            "Centro-Oeste": [
-                { id: "MT", name: "Mato Grosso", fill: "#78350f", d: "M 40,50 L 180,50 L 160,170 L 40,150 Z", tx: 105, ty: 105 },
-                { id: "GO", name: "Goiás", fill: "#b45309", d: "M 180,90 L 270,90 L 250,200 L 160,170 Z", tx: 215, ty: 140 },
-                { id: "DF", name: "Distrito Federal", fill: "#f59e0b", d: "M 220,125 L 245,125 L 245,145 L 220,145 Z", tx: 232, ty: 138 },
-                { id: "MS", name: "Mato Grosso do Sul", fill: "#451a03", d: "M 40,150 L 160,170 L 130,260 L 50,230 Z", tx: 95, ty: 205 }
-            ],
-            "Sudeste": [
-                { id: "MG", name: "Minas Gerais", fill: "#7f1d1d", d: "M 60,40 L 200,40 L 180,160 L 50,130 Z", tx: 125, ty: 95 },
-                { id: "ES", name: "Espírito Santo", fill: "#b91c1c", d: "M 200,80 L 240,90 L 230,140 L 180,120 Z", tx: 212, ty: 112 },
-                { id: "RJ", name: "Rio de Janeiro", fill: "#ef4444", d: "M 140,150 L 210,155 L 195,190 L 130,180 Z", tx: 170, ty: 172 },
-                { id: "SP", name: "São Paulo", fill: "#991b1b", d: "M 30,125 L 140,150 L 110,230 L 20,190 Z", tx: 75, ty: 175 }
-            ],
-            "Sul": [
-                { id: "PR", name: "Paraná", fill: "#1f2937", d: "M 80,40 L 200,40 L 180,100 L 70,90 Z", tx: 135, ty: 70 },
-                { id: "SC", name: "Santa Catarina", fill: "#4b5563", d: "M 90,90 L 180,100 L 160,150 L 80,135 Z", tx: 135, ty: 120 },
-                { id: "RS", name: "Rio Grande do Sul", fill: "#111827", d: "M 60,130 L 160,145 L 130,245 L 40,210 Z", tx: 100, ty: 185 }
-            ]
+            "Norte": [{ id: "AM", name: "Amazonas", fill: "#064e3b", d: "M 20,60 L 140,60 L 120,160 L 20,140 Z", tx: 70, ty: 105 }],
+            "Centro-Oeste": [{ id: "DF", name: "Distrito Federal", fill: "#f59e0b", d: "M 220,125 L 245,125 L 245,145 L 220,145 Z", tx: 232, ty: 138 }],
+            "Sudeste": [{ id: "SP", name: "São Paulo", fill: "#991b1b", d: "M 30,125 L 140,150 L 110,230 L 20,190 Z", tx: 75, ty: 175 }],
+            "Sul": [{ id: "PR", name: "Paraná", fill: "#1f2937", d: "M 80,40 L 200,40 L 180,100 L 70,90 Z", tx: 135, ty: 70 }]
         };
 
         // Disparador de Seleção de Região (Tela Inicial)
@@ -301,7 +315,6 @@
             });
         });
 
-        // Controle e Chamada do Modal Centralizado
         function invokeModal(type, value, message) {
             selectionContext.type = type;
             selectionContext.value = value;
@@ -319,15 +332,16 @@
                 currentSelectedRegion = selectionContext.value;
                 renderRegionalMap(selectionContext.value);
             } else if (selectionContext.type === 'state') {
+                currentSelectedState = selectionContext.value;
                 showExpressThemes();
             }
         });
 
-        // Transição e renderização da Tela 2 (Estados)
         function renderRegionalMap(region) {
             brazilMapContainer.classList.add('hidden');
             expressThemesContainer.classList.add('hidden');
             advancedThemesContainer.classList.add('hidden');
+            parlamentaresPbContainer.classList.add('hidden');
             regionalMapContainer.classList.remove('hidden');
             
             regionalTitle.textContent = `Estados da Região ${region}`;
@@ -363,18 +377,14 @@
             });
         }
 
-        // Nova mecânica sugerida: Alternância de Seleção do CARD INTEIRO (Toggle Chips)
         function toggleCardTheme(btnElement) {
             const indicatorCircle = btnElement.querySelector('.checked-indicator');
-            
             if (btnElement.classList.contains('border-blue-500')) {
-                // Estado: Desmarcado
                 btnElement.classList.remove('border-blue-500', 'bg-blue-950/40');
                 btnElement.classList.add('border-transparent');
                 indicatorCircle.classList.remove('bg-blue-500', 'border-blue-500', 'text-white');
                 indicatorCircle.classList.add('border-gray-500', 'text-transparent');
             } else {
-                // Estado: Marcado/Selecionado
                 btnElement.classList.remove('border-transparent');
                 btnElement.classList.add('border-blue-500', 'bg-blue-950/40');
                 indicatorCircle.classList.remove('border-gray-500', 'text-transparent');
@@ -382,11 +392,11 @@
             }
         }
 
-        // Navegação das telas de Temas
         function showExpressThemes() {
             regionalMapContainer.classList.add('hidden');
             brazilMapContainer.classList.add('hidden');
             advancedThemesContainer.classList.add('hidden');
+            parlamentaresPbContainer.classList.add('hidden');
             expressThemesContainer.classList.remove('hidden');
             instructionText.textContent = "Escolha rápida de pautas relevantes";
         }
@@ -397,7 +407,55 @@
             instructionText.textContent = "Refinamento minucioso dos eixos políticos";
         });
 
-        // Botões de Retorno/Voltar
+        // Regra solicitada: Se Paraíba for o estado selecionado, exibe os cards customizados
+        function processarResultados() {
+            if (currentSelectedRegion === "Nordeste" && currentSelectedState === "Paraíba") {
+                renderizarCardsParaiba();
+                expressThemesContainer.classList.add('hidden');
+                advancedThemesContainer.classList.add('hidden');
+                parlamentaresPbContainer.classList.remove('hidden');
+                instructionText.textContent = "Ficha cadastral e de reeleição da bancada paraibana";
+            } else {
+                alert(`Filtro concluído para ${currentSelectedState}! Exibindo análises padrão.`);
+            }
+        }
+
+        // Geração dinâmica dos cards com as ênfases exigidas
+        function renderizarCardsParaiba() {
+            parlamentaresGrid.innerHTML = '';
+            dadosParaiba.forEach(p => {
+                const card = document.createElement('div');
+                card.className = "bg-gray-700/30 border border-gray-600 rounded-xl p-4 flex flex-col justify-between hover:border-gray-500 transition shadow-sm";
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-base font-bold text-white tracking-wide">${p.nome} <span class="text-xs text-blue-400 font-semibold">(${p.partido})</span></h3>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${p.statusClass}">
+                                ${p.status === 'Concorrendo' ? '🔄 Reeleição' : '❌ Não Concorre'}
+                            </span>
+                        </div>
+                        <div class="space-y-2 mt-3">
+                            <div class="bg-blue-950/40 border-l-4 border-blue-500 p-2.5 rounded-r-lg">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-blue-400 block mb-0.5">Tempo como Deputado Federal</span>
+                                <p class="text-sm font-extrabold text-gray-100">${p.tempo} <span class="text-xs font-normal text-gray-400">(${p.mandatos})</span></p>
+                            </div>
+                            <div class="bg-gray-800/50 p-2.5 rounded-lg border border-gray-700/50">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 block mb-0.5">Outros Cargos Eletivos</span>
+                                <p class="text-xs text-gray-300 leading-relaxed">${p.outros}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-2 border-t border-gray-700/40 flex justify-between items-center text-xs">
+                        <span class="text-gray-400 font-medium">Eleições 2026:</span>
+                        <span class="font-bold ${p.status === 'Concorrendo' ? 'text-green-400' : 'text-amber-400'}">${p.status}</span>
+                    </div>
+                `;
+                parlamentaresGrid.appendChild(card);
+            });
+        }
+
+        // Trtamento dos botões de retorno
         btnBackToBrazil.addEventListener('click', () => {
             regionalMapContainer.classList.add('hidden');
             brazilMapContainer.classList.remove('hidden');
@@ -411,6 +469,12 @@
 
         btnBackToExpress.addEventListener('click', () => {
             advancedThemesContainer.classList.add('hidden');
+            expressThemesContainer.classList.remove('hidden');
+            instructionText.textContent = "Escolha rápida de pautas relevantes";
+        });
+
+        btnBackToThemes.addEventListener('click', () => {
+            parlamentaresPbContainer.classList.add('hidden');
             expressThemesContainer.classList.remove('hidden');
             instructionText.textContent = "Escolha rápida de pautas relevantes";
         });
