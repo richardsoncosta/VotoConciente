@@ -6,39 +6,15 @@
     <title>Bússola Eleitoral - Análise Parlamentar</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        .map-region, .map-state {
-            cursor: pointer;
-            transition: fill 0.2s, transform 0.2s, opacity 0.2s;
-        }
-        .map-region:hover, .map-state:hover {
-            fill: #2563eb !important;
-            opacity: 0.9;
-        }
+        .map-region, .map-state { cursor: pointer; transition: fill 0.2s, transform 0.2s, opacity 0.2s; }
+        .map-region:hover, .map-state:hover { fill: #2563eb !important; opacity: 0.9; }
         .hidden { display: none; }
-        
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1f2937;
-            border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
-        }
-
-        /* Animação suave para o indicador de rolagem */
-        @keyframes bounce-slow {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(4px); }
-        }
-        .animate-bounce-slow {
-            animation: bounce-slow 1.6s infinite ease-in-out;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+        .animate-bounce-slow { animation: bounce-slow 1.6s infinite ease-in-out; }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-between p-4 sm:p-6 font-sans">
@@ -50,562 +26,67 @@
 
     <main class="w-full max-w-4xl flex flex-col items-center justify-center bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-2xl border border-gray-700 min-h-[480px] transition-all duration-300 relative">
         
+        <!-- TELA 1: MAPA -->
         <div id="brazil-map-container" class="w-full flex flex-col items-center">
             <svg id="brazil-map" viewBox="0 0 400 400" class="w-72 h-72 sm:w-80 sm:h-80">
                 <path class="map-region" data-region="Norte" fill="#065f46" d="M 50,50 L 220,50 L 200,180 L 50,150 Z" />
-                <text x="110" y="100" fill="white" font-weight="bold" font-size="12" pointer-events="none">NORTE</text>
-                
                 <path class="map-region" data-region="Nordeste" fill="#1e3a8a" d="M 220,50 L 350,100 L 320,220 L 200,180 Z" />
-                <text x="250" y="130" fill="white" font-weight="bold" font-size="12" pointer-events="none">NORDESTE</text>
-                
                 <path class="map-region" data-region="Centro-Oeste" fill="#854d0e" d="M 120,170 L 220,180 L 240,280 L 130,270 Z" />
-                <text x="145" y="230" fill="white" font-weight="bold" font-size="12" pointer-events="none">CENTRO-OESTE</text>
-                
                 <path class="map-region" data-region="Sudeste" fill="#991b1b" d="M 220,180 L 320,220 L 290,320 L 210,280 Z" />
-                <text x="245" y="260" fill="white" font-weight="bold" font-size="12" pointer-events="none">SUDESTE</text>
-                
                 <path class="map-region" data-region="Sul" fill="#374151" d="M 170,280 L 240,280 L 210,370 L 160,350 Z" />
-                <text x="185" y="320" fill="white" font-weight="bold" font-size="12" pointer-events="none">SUL</text>
             </svg>
         </div>
 
         <div id="regional-map-container" class="w-full flex flex-col items-center hidden">
-            <button id="btn-back-to-brazil" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 self-start transition cursor-pointer">
-                ← Voltar para o Mapa do Brasil
-            </button>
-            <h2 id="regional-title" class="text-xl font-semibold text-gray-200 mb-4">Região Selecionada</h2>
+            <button id="btn-back-to-brazil" class="mb-4 text-sm text-blue-400 font-medium">← Voltar</button>
             <svg id="regional-map" viewBox="0 0 400 320" class="w-full max-w-md h-64"></svg>
         </div>
 
-        <div id="express-themes-container" class="w-full hidden">
-            <button id="btn-back-to-states" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition cursor-pointer">
-                ← Voltar para Estados
-            </button>
-            <div class="text-center mb-6">
-                <h2 class="text-xl font-bold text-gray-100">Quais grandes temas mais chamam sua atenção?</h2>
-                <p class="text-xs sm:text-sm text-gray-400 mt-1">Selecione as pautas que deseja analisar.</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
-                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">📅 PEC Fim Da Escala 6X1</span>
-                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
-                </button>
-                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
-                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🌱 PEC Desmonte do Meio-Ambiente</span>
-                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
-                </button>
-                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
-                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🛡️ PEC Segurança Pública</span>
-                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
-                </button>
-                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
-                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🏛️ PEC da blindagem para políticos</span>
-                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
-                </button>
-                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
-                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">🏖️ PEC: privatização das praias</span>
-                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
-                </button>
-                <button onclick="toggleCardTheme(this)" class="flex items-center justify-between p-4 bg-gray-700/40 hover:bg-gray-700/80 border-2 border-transparent rounded-xl text-left transition duration-150 cursor-pointer group">
-                    <span class="text-sm font-semibold text-gray-200 group-hover:text-white">💼 PEC Precarização do FGTS</span>
-                    <div class="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center text-xs text-transparent font-bold bg-transparent checked-indicator shrink-0 ml-2">✓</div>
-                </button>
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-700 pt-5">
-                <button id="btn-trigger-advanced" class="text-sm text-blue-400 hover:text-blue-300 font-medium hover:underline transition order-2 sm:order-1 cursor-pointer">
-                    🔍 Quero escolher mais temas detalhados
-                </button>
-                <button onclick="processarResultados()" class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-md transition order-1 sm:order-2 cursor-pointer">
-                    Seguir com estes →
-                </button>
-            </div>
-        </div>
-
-        <div id="advanced-themes-container" class="w-full hidden">
-            <button id="btn-back-to-express" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition cursor-pointer">
-                ← Voltar para Seleção Rápida
-            </button>
-            <h2 class="text-lg font-bold text-gray-100 mb-1 text-center">Lista Geral de Pautas Parlamentares</h2>
-            
-            <div class="space-y-5 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
-                <div class="bg-gray-750 border border-gray-700 rounded-xl p-4">
-                    <h3 class="text-sm font-bold text-amber-400 mb-2">💼 Trabalho e Economia</h3>
-                    <div class="space-y-2 text-xs text-gray-300">
-                        <label class="flex items-start gap-2 p-2 hover:bg-gray-700/50 rounded cursor-pointer"><input type="checkbox" checked class="mt-0.5 accent-amber-500"><span>Aprovação integral da PEC Fim da Escala 6x1.</span></label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-5 flex justify-end">
-                <button onclick="processarResultados()" class="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-bold transition shadow-md cursor-pointer">
-                    Finalizar Filtro Avançado →
-                </button>
-            </div>
-        </div>
-
         <div id="parlamentares-pb-container" class="w-full hidden">
-            <button id="btn-back-to-themes" class="mb-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition cursor-pointer">
-                ← Voltar para seleção de pautas
-            </button>
-            <div class="text-center mb-4">
-                <h2 class="text-2xl font-bold text-blue-400">Bancada Federal da Paraíba</h2>
-                <p class="text-xs text-gray-400 mt-1">Ficha cadastral e histórica dos deputados federais.</p>
-            </div>
-
+            <button id="btn-back-to-themes" class="mb-4 text-sm text-blue-400">← Voltar</button>
+            <h2 class="text-2xl font-bold text-blue-400 text-center mb-6">Bancada Federal da Paraíba</h2>
             <div class="relative w-full">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-h-none md:max-h-[550px] overflow-y-visible md:overflow-y-auto pr-0 md:pr-2 custom-scrollbar" id="parlamentares-grid">
-                    </div>
-
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:max-h-[550px] overflow-y-visible md:overflow-y-auto pr-0 md:pr-2 custom-scrollbar" id="parlamentares-grid"></div>
                 <div id="scroll-indicator" class="hidden md:flex absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-800 to-transparent pointer-events-none flex-col items-center justify-end pb-1 transition-opacity duration-300">
-                    <span class="text-[10px] text-blue-400 font-bold tracking-wider uppercase drop-shadow">Role para ver mais deputados</span>
-                    <svg class="w-4 h-4 text-blue-400 animate-bounce-slow mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
+                    <span class="text-[10px] text-blue-400 font-bold">Role para ver mais</span>
                 </div>
             </div>
         </div>
-
     </main>
 
-    <div id="confirmation-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-gray-800 border border-gray-700 p-6 rounded-2xl max-w-xs w-full text-center shadow-2xl">
-            <h3 id="modal-text" class="text-base text-gray-200 mb-5 font-medium">Você confirma a seleção?</h3>
-            <div class="flex justify-center gap-3">
-                <button id="modal-btn-cancel" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer">Voltar</button>
-                <button id="modal-btn-confirm" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs sm:text-sm font-semibold text-white transition shadow cursor-pointer">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
-    <footer class="text-xs text-gray-500 my-4 text-center">
-        Bússola Eleitoral 2026 • Filtros dinâmicos estaduais aplicados
-    </footer>
-
     <script>
-        const brazilMapContainer = document.getElementById('brazil-map-container');
-        const regionalMapContainer = document.getElementById('regional-map-container');
-        const expressThemesContainer = document.getElementById('express-themes-container');
-        const advancedThemesContainer = document.getElementById('advanced-themes-container');
-        const parlamentaresPbContainer = document.getElementById('parlamentares-pb-container');
-        const parlamentaresGrid = document.getElementById('parlamentares-grid');
-        const scrollIndicator = document.getElementById('scroll-indicator');
-        
-        const confirmationModal = document.getElementById('confirmation-modal');
-        const modalText = document.getElementById('modal-text');
-        const modalBtnCancel = document.getElementById('modal-btn-cancel');
-        const modalBtnConfirm = document.getElementById('modal-btn-confirm');
-        
-        const btnBackToBrazil = document.getElementById('btn-back-to-brazil');
-        const btnBackToStates = document.getElementById('btn-back-to-states');
-        const btnTriggerAdvanced = document.getElementById('btn-trigger-advanced');
-        const btnBackToExpress = document.getElementById('btn-back-to-express');
-        const btnBackToThemes = document.getElementById('btn-back-to-themes');
-        
-        const regionalTitle = document.getElementById('regional-title');
-        const regionalMapSvg = document.getElementById('regional-map');
-        const instructionText = document.getElementById('instruction-text');
-
-        let currentSelectedRegion = '';
-        let currentSelectedState = '';
-        let selectionContext = { type: '', value: '' };
-
         const dadosParaiba = [
-            {
-                nome: "Aguinaldo Ribeiro", partido: "PP", tempo: "16 anos", mandatos: "2010, 2014, 2018 e 2022",
-                outros: "Foi Deputado Estadual por 8 anos (2003 a 2010). (Também foi Ministro das Cidades entre 2012 e 2014).",
-                clt: "Não",
-                historicoProfissional: "Empresário e Engenheiro Civil. Nunca atuou sob regime CLT convencional de base; iniciou sua carreira no setor privado como empresário e engenheiro na área da construção e de infraestrutura ligada aos negócios de sua família tradicional na política, migrando rapidamente para cargos públicos e mandatos eletivos.",
-                patrimonioTotal: "R$ 3.438.609,71", qtdImoveis: 8,
-                valorImoveis: "1 apartamento de R$ 2.290.414,14; outros 2 apartamentos menores, 4 terrenos e 1 sala comercial que completam o restante do montante imobiliário.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Favor", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Favor", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Cabo Gilberto Silva", partido: "PL", tempo: "4 anos", mandatos: "2022",
-                outros: "Foi Deputado Estadual por 4 anos (2019 a 2023) e Vereador de João Pessoa por 2 anos (2017 a 2018).",
-                clt: "Não",
-                historicoProfissional: "Servidor Público Estatutário (Militar). Não tem histórico na iniciativa privada como CLT ou empresário. Entrou para a Polícia Militar da Paraíba in 2002 aos 20 anos, consolidando sua carreira como Cabo da PM antes de obter bacharelado em Direito e migrar integralmente para a política institucional.",
-                patrimonioTotal: "R$ 1.045.154,69", qtdImoveis: 5,
-                valorImoveis: "5 casas com valores declarados entre R$ 40.000,00 e R$ 190.000,00 cada uma.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Favor", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Contra",
-                    "Encarece Conta de Energia": "Contra", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Favor"
-                }
-            },
-            {
-                nome: "Dr. Damião", partido: "União Brasil", tempo: "20 anos", mandatos: "2006, 2010, 2014, 2018 e 2022",
-                outros: "Nenhum histórico em outros cargos eleitos.",
-                clt: "Não",
-                historicoProfissional: "Profissional Liberal (Médico) e Empresário. Atuou fortemente na medicina privada e em clínicas próprias, operando tanto na condição de médico cirurgião e ginecologista quanto como proprietário/empresário no setor de saúde e comunicação (radiodifusão) na Paraíba antes e durante sua inserção parlamentar.",
-                patrimonioTotal: "R$ 814.717,66", qtdImoveis: 3,
-                valorImoveis: "1 apartamento declarado por R$ 380.000,00; 1 sala comercial de R$ 45.000,00 e participações em frações de terrenos/lotes urbanos.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Favor", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Indefinido", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Gervásio Maia", partido: "PSB", tempo: "8 anos", mandatos: "2018 e 2022",
-                outros: "Foi Deputado Estadual por 16 anos (2003 a 2019), tendo presidido a Assembleia Legislativa da Paraíba.",
-                clt: "Não",
-                historicoProfissional: "Profissional Liberal (Advogado). Formado em Direito, possui histórico de atuação técnica jurídica autônoma. Entretanto, vindo de uma tradicional família política do estado, ingressou muito jovem em cargos públicos e mandatos legislativos, não possuindo registros consolidados de carreira de base sob as regras da CLT.",
-                patrimonioTotal: "R$ 1.256.402,12", qtdImoveis: 4,
-                valorImoveis: "1 casa residencial declarada por R$ 450.000,00; 1 apartamento de R$ 320.000,00 e 2 terrenos rurais/lotes somando R$ 180.000,00.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Contra", "Segurança Pública": "Contra",
-                    "Blindagem para Políticos": "Contra", "Privatização das Praias": "Contra", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Contra", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Contra",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Hugo Motta", partido: "Republicanos", tempo: "16 anos", mandatos: "2010, 2014, 2018 e 2022",
-                outros: "Nenhum outro (elegeu-se como o deputado mais jovem do país em 2010, aos 21 anos). Atual Presidente da Câmara.",
-                clt: "Não",
-                historicoProfissional: "Nunca teve ocupação formal fora da política. Embora tenha se formado em Medicina, ele foi eleito Deputado Federal logo após atingir a maioridade e enquanto cursava a faculdade. Toda a sua vida profissional ativa e histórica deu-se estritamente no exercício de mandatos políticos na Câmara Federal, sem nenhuma atuação prévia em regime CLT ou gestão empresarial de mercado.",
-                patrimonioTotal: "R$ 1.167.092,40", qtdImoveis: 2,
-                valorImoveis: "Terrenos e frações patrimoniais residenciais declarados na região de Patos e João Pessoa avaliados historicamente em cerca de R$ 350.000,00.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Favor", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Favor", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Contra"
-                }
-            },
-            {
-                nome: "Luiz Couto", partido: "PT", tempo: "20 anos", mandatos: "2002, 2006, 2010, 2014 e 2022",
-                outros: "Foi Deputado Estadual por 8 anos (1995 a 2003) e Secretário de Estado de Direitos Humanos.",
-                clt: "Não",
-                historicoProfissional: "Religioso e Professor Universitário. Não atuou no mercado corporativo tradicional ou comercial. Sua trajetória profissional anterior à política legislativa baseou-se na ordenação como Padre Católico e em sua atuação na docência como professor de filosofia e teologia na Universidade Federal da Paraíba (UFPB), sob regime estatutário do funcionalismo público federal.",
-                patrimonioTotal: "R$ 640.000,00", qtdImoveis: 1,
-                valorImoveis: "1 apartamento residencial declarado no valor de R$ 420.000,00.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Contra", "Segurança Pública": "Contra",
-                    "Blindagem para Políticos": "Contra", "Privatização das Praias": "Contra", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Contra", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Contra",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Mersinho Lucena", partido: "PSD", tempo: "4 anos", mandatos: "2022",
-                outros: "Foi Vice-Prefeito do município de Cabedelo (2021 a 2022).",
-                clt: "Não",
-                historicoProfissional: "Empresário. Atuou amplamente no setor privado antes de assumir cargos públicos de destaque. É investidor e empresário de múltiplos ramos na Paraíba, englobando nichos da Construção Civil, mercado de Entretenimento, grandes eventos e o setor de Turismo regional.",
-                patrimonioTotal: "R$ 405.000,00", qtdImoveis: 0,
-                valorImoveis: "R$ 0,00. Não registrou imóveis físicos próprios no balanço oficial desse pleito; seu patrimônio está concentrado em cotas de capital social de empresas e fundos.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Favor", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Indefinido", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Romero Rodrigues", partido: "Podemos", tempo: "8 anos", mandatos: "2010 e 2022",
-                outros: "Foi Prefeito de Campina Grande por 8 anos (2013 a 2020), Deputado Estadual por 4 anos (2007 a 2011) e Vereador de Campina Grande por 14 anos (1993 a 2007).",
-                clt: "Não",
-                historicoProfissional: "Servidor Público Estatutário e Técnico Agrícola. Formado em Engenharia Agronômica, possui histórico profissional como funcionário de carreira do estado (servidor estatutário) e exerceu funções operacionais na Secretaria de Agricultura antes de iniciar a extensa jornada de mandatos na Câmara de Vereadores.",
-                patrimonioTotal: "R$ 1.450.000,00", qtdImoveis: 2,
-                valorImoveis: "1 apartamento declarado por R$ 400.000,00 e 1 casa residencial de R$ 250.000,00.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Indefinido", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Contra", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Ruy Carneiro", partido: "Podemos", tempo: "12 anos", mandatos: "2010, 2018 e 2022",
-                outros: "Foi Deputado Estadual por 8 anos (1999 a 2007) e Vereador de João Pessoa por 6 anos (1993 a 1999).",
-                clt: "Não",
-                historicoProfissional: "Administrador Público e Gestor Institucional. Embora tenha formação acadêmica em Administração de Empresas, seu histórico de trabalho concentrou-se predominantemente em cargos de livre nomeação e confiança na administração direta e indireta, sem uma trajetória de base no regime CLT do varejo ou mercado financeiro privado.",
-                patrimonioTotal: "R$ 1.623.500,00", qtdImoveis: 3,
-                valorImoveis: "1 apartamento residencial de R$ 600.000,00; 1 apartamento menor de R$ 250.000,00 e 1 terreno de R$ 180.000,00.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Indefinido", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Contra", "Privatização das Praias": "Indefinido", "Aumento de Gastos nas Eleições": "Contra",
-                    "Encarece Conta de Energia": "Contra", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Indefinido",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Wellington Roberto", partido: "PL", tempo: "24 anos", mandatos: "2002, 2006, 2010, 2014, 2018 e 2022",
-                outros: "Foi Senador da República por 2 anos (2001 a 2003, como suplente em exercício).",
-                clt: "Não",
-                historicoProfissional: "Empresário. Possui uma consolidada carreira no setor privado paralela e anterior à sua entrada permanente no Congresso Nacional. É empresário e produtor, atuando historicamente na gestão e controle de empresas nos segmentos de transportes, comércio de veículos e atividades do agronegócio e pecuária no interior do estado.",
-                patrimonioTotal: "R$ 3.814.442,67", qtdImoveis: 10,
-                valorImoveis: "1 terreno principal de R$ 1.173.000,00; outros 6 terrenos menores dispersos e 3 apartamentos declarados.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Favor", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Favor", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Raniery Paulino", partido: "Republicanos", tempo: "Suplente em exercício", mandatos: "Assumiu temporariamente em 2024 e em maio de 2026",
-                outros: "Foi Deputado Estadual por 16 anos (2007 a 2023).",
-                clt: "Não",
-                historicoProfissional: "Profissional Liberal (Advogado). Concluiu bacharelado em Direito e obteve inscrição na OAB, atuando na advocacia privada de maneira autônoma. No entanto, por herdar uma base política familiar tradicional na região do Brejo Paraibano, teve sua ocupação principal focada nas funções legislativas e partidárias estaduais desde jovem, sem experiência substancial como empregado sob regência CLT.",
-                patrimonioTotal: "R$ 1.782.510,00", qtdImoveis: 4,
-                valorImoveis: "1 casa residencial declarada por R$ 550.000,00; 1 apartamento de R$ 390.000,00 e 2 salas/terrenos comerciais somando R$ 220.000,00.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Favor", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Indefinido", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            },
-            {
-                nome: "Valdir Trindade", partido: "Republicanos", tempo: "Suplente em exercício", mandatos: "Assumiu como suplente em junho de 2026",
-                outros: "Foi eleito Vereador em João Pessoa nas eleições de 2024.",
-                clt: "Sim",
-                historicoProfissional: "Radialista e Profissional de Comunicação. Possui histórico profissional no setor privado de rádio e mídia. Atuou como comunicador e radialista de frentes comunitárias e religiosas e, embora tenha forte elo com coordenação e apresentações confessionais na Paraíba, possui trânsito direto em funções de radiodifusão comercial privada de forma regular antes do ingresso no parlamento.",
-                patrimonioTotal: "R$ 195.000,00", qtdImoveis: 1,
-                valorImoveis: "1 terreno/lote residencial declarado no valor de R$ 75.000,00.",
-                status: "Concorrendo", statusClass: "bg-green-500/10 text-green-400 border-green-500/30",
-                pautas: {
-                    "Fim da Escala 6x1": "Favor", "Desmonte do Meio-Ambiente": "Favor", "Segurança Pública": "Favor",
-                    "Blindagem para Políticos": "Favor", "Privatização das Praias": "Favor", "Aumento de Gastos nas Eleições": "Favor",
-                    "Encarece Conta de Energia": "Indefinido", "Fim de Benefícios a Autistas": "Contra", "Precarização do FGTS": "Favor",
-                    "CPI do Banco Master": "Indefinido"
-                }
-            }
+            { nome: "Aguinaldo Ribeiro", partido: "PP", statusClass: "bg-green-500/10 text-green-400" },
+            { nome: "Cabo Gilberto Silva", partido: "PL", statusClass: "bg-green-500/10 text-green-400" }
         ];
 
-        const statesByRegion = {
-            "Nordeste": [
-                { id: "MA", name: "Maranhão", fill: "#1e3a8a", d: "M 40,60 L 120,60 L 100,160 L 40,140 Z", tx: 75, ty: 105 },
-                { id: "PI", name: "Piauí", fill: "#1d4ed8", d: "M 120,60 L 170,80 L 150,180 L 100,160 Z", tx: 135, ty: 125 },
-                { id: "CE", name: "Ceará", fill: "#2563eb", d: "M 170,80 L 230,90 L 210,150 L 160,140 Z", tx: 195, ty: 120 },
-                { id: "RN", name: "Rio Grande do Norte", fill: "#1e40af", d: "M 230,90 L 290,100 L 280,130 L 220,120 Z", tx: 255, ty: 112 },
-                { id: "PB", name: "Paraíba", fill: "#3b82f6", d: "M 220,120 L 280,130 L 270,160 L 210,150 Z", tx: 245, ty: 142 },
-                { id: "PE", name: "Pernambuco", fill: "#1c3d5a", d: "M 160,140 L 270,160 L 260,190 L 150,170 Z", tx: 210, ty: 170 },
-                { id: "AL", name: "Alagoas", fill: "#60a5fa", d: "M 230,190 L 260,190 L 255,215 L 225,215 Z", tx: 242, ty: 205 },
-                { id: "SE", name: "Sergipe", fill: "#2563eb", d: "M 220,215 L 245,215 L 240,235 L 215,235 Z", tx: 230, ty: 228 },
-                { id: "BA", name: "Bahia", fill: "#172554", d: "M 100,160 L 150,180 L 225,215 L 180,290 L 90,250 Z", tx: 145, ty: 225 }
-            ]
-        };
-
-        document.querySelectorAll('.map-region').forEach(element => {
-            element.addEventListener('click', (e) => {
-                const selectedRegion = e.target.getAttribute('data-region');
-                invokeModal('region', selectedRegion, `Você selecionou a região ${selectedRegion}. Deseja ver os estados?`);
-            });
-        });
-
-        function invokeModal(type, value, message) {
-            selectionContext.type = type;
-            selectionContext.value = value;
-            modalText.textContent = message;
-            confirmationModal.classList.remove('hidden');
-        }
-
-        modalBtnCancel.addEventListener('click', () => confirmationModal.classList.add('hidden'));
-
-        modalBtnConfirm.addEventListener('click', () => {
-            confirmationModal.classList.add('hidden');
-            if (selectionContext.type === 'region') {
-                currentSelectedRegion = selectionContext.value;
-                renderRegionalMap(selectionContext.value);
-            } else if (selectionContext.type === 'state') {
-                currentSelectedState = selectionContext.value;
-                showExpressThemes();
-            }
-        });
-
-        function renderRegionalMap(region) {
-            brazilMapContainer.classList.add('hidden');
-            expressThemesContainer.classList.add('hidden');
-            advancedThemesContainer.classList.add('hidden');
-            parlamentaresPbContainer.classList.add('hidden');
-            regionalMapContainer.classList.remove('hidden');
-            
-            regionalTitle.textContent = `Estados da Região ${region}`;
-            instructionText.textContent = "Clique sobre a sigla do estado desejado";
-
-            regionalMapSvg.innerHTML = '';
-            const targetedStates = statesByRegion[region] || [];
-
-            targetedStates.forEach(state => {
-                const statePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                statePath.setAttribute("d", state.d);
-                statePath.setAttribute("fill", state.fill);
-                statePath.setAttribute("class", "map-state");
-                statePath.setAttribute("data-state", state.name);
-                
-                const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                labelText.setAttribute("x", state.tx);
-                labelText.setAttribute("y", state.ty);
-                labelText.setAttribute("fill", "white");
-                labelText.setAttribute("font-weight", "bold");
-                labelText.setAttribute("font-size", "11");
-                labelText.setAttribute("pointer-events", "none");
-                labelText.setAttribute("text-anchor", "middle");
-                labelText.textContent = state.id;
-
-                statePath.addEventListener('click', (e) => {
-                    const selectedStateName = e.target.getAttribute('data-state');
-                    invokeModal('state', selectedStateName, `Deseja analisar os parlamentares do estado: ${selectedStateName}?`);
-                });
-
-                regionalMapSvg.appendChild(statePath);
-                regionalMapSvg.appendChild(labelText);
-            });
-        }
-
-        function toggleCardTheme(btnElement) {
-            const indicatorCircle = btnElement.querySelector('.checked-indicator');
-            if (btnElement.classList.contains('border-blue-500')) {
-                btnElement.classList.remove('border-blue-500', 'bg-blue-950/40');
-                btnElement.classList.add('border-transparent');
-                indicatorCircle.classList.remove('bg-blue-500', 'border-blue-500', 'text-white');
-                indicatorCircle.classList.add('border-gray-500', 'text-transparent');
-            } else {
-                btnElement.classList.remove('border-transparent');
-                btnElement.classList.add('border-blue-500', 'bg-blue-950/40');
-                indicatorCircle.classList.remove('border-gray-500', 'text-transparent');
-                indicatorCircle.classList.add('bg-blue-500', 'border-blue-500', 'text-white');
-            }
-        }
-
-        function showExpressThemes() {
-            regionalMapContainer.classList.add('hidden');
-            brazilMapContainer.classList.add('hidden');
-            advancedThemesContainer.classList.add('hidden');
-            parlamentaresPbContainer.classList.add('hidden');
-            expressThemesContainer.classList.remove('hidden');
-            instructionText.textContent = "Escolha rápida de pautas relevantes";
-        }
-
-        btnTriggerAdvanced.addEventListener('click', () => {
-            expressThemesContainer.classList.add('hidden');
-            advancedThemesContainer.classList.remove('hidden');
-        });
-
-        function processarResultados() {
-            if (currentSelectedRegion === "Nordeste" && currentSelectedState === "Paraíba") {
-                renderizarCardsParaiba();
-                expressThemesContainer.classList.add('hidden');
-                advancedThemesContainer.classList.add('hidden');
-                parlamentaresPbContainer.classList.remove('hidden');
-                instructionText.textContent = "Ficha cadastral da bancada paraibana";
-            }
-        }
-
         function renderizarCardsParaiba() {
-            parlamentaresGrid.innerHTML = '';
+            const grid = document.getElementById('parlamentares-grid');
+            grid.innerHTML = '';
             dadosParaiba.forEach(p => {
                 const card = document.createElement('div');
-                card.className = "bg-gray-700/30 border border-gray-600 rounded-xl p-4 flex flex-col justify-between hover:border-gray-500 transition shadow-sm";
-                
-                let pautasHtml = '';
-                Object.entries(p.pautas).forEach(([pautaNome, status]) => {
-                    let corClasse = 'bg-gray-500/10 text-gray-400 border-gray-500/20';
-                    if (status === 'Favor') corClasse = 'bg-green-500/10 text-green-400 border-green-500/30';
-                    if (status === 'Contra') corClasse = 'bg-red-500/10 text-red-400 border-red-500/30';
-                    
-                    pautasHtml += `
-                        <div class="flex items-center justify-between text-[11px] p-1 border-b border-gray-700/30">
-                            <span class="text-gray-300 truncate max-w-[210px]">${pautaNome}</span>
-                            <span class="px-1.5 py-0.5 rounded border text-[10px] font-bold ${corClasse}">${status}</span>
-                        </div>
-                    `;
-                });
-
-                const cltBadge = p.clt === 'Sim' 
-                    ? `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide uppercase">Histórico CLT</span>`
-                    : `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium tracking-wide uppercase">Sem histórico CLT</span>`;
-
+                card.className = "bg-gray-700/30 border border-gray-600 rounded-xl p-4 flex flex-col justify-between";
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-base font-bold text-white tracking-wide">${p.nome} <span class="text-xs text-blue-400 font-semibold">(${p.partido})</span></h3>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${p.statusClass}">🔄 Reeleição</span>
-                        </div>
-                        <div class="space-y-2.5 mt-3">
-                            <div class="bg-blue-950/40 border-l-4 border-blue-500 p-2.5 rounded-r-lg">
-                                <span class="text-[10px] uppercase font-bold tracking-wider text-blue-400 block mb-0.5">Tempo como Deputado Federal</span>
-                                <p class="text-xs font-bold text-gray-100">${p.tempo} <span class="text-[11px] font-normal text-gray-400">(${p.mandatos})</span></p>
-                            </div>
-                            <div class="bg-gray-800/50 p-2.5 rounded-lg border border-gray-700/50">
-                                <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 block mb-0.5">Outros Cargos Eletivos</span>
-                                <p class="text-xs text-gray-300 leading-relaxed">${p.outros}</p>
-                            </div>
-                            <div class="bg-gray-800/50 p-2.5 rounded-lg border border-gray-700/50">
-                                <div class="flex justify-between items-center mb-1">
-                                    <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Histórico Profissional</span>
-                                    ${cltBadge}
-                                </div>
-                                <p class="text-xs text-gray-300 leading-relaxed">${p.historicoProfissional}</p>
-                            </div>
-                            <div class="bg-gray-800/50 p-2.5 rounded-lg border border-gray-700/50 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div class="sm:col-span-2 border-b border-gray-700 pb-1 flex justify-between items-center">
-                                    <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400">Patrimônio Declarado</span>
-                                    <span class="text-xs font-bold text-amber-400">${p.patrimonioTotal}</span>
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <span class="text-[10px] text-gray-400 block">Valores dos Imóveis (${p.qtdImoveis})</span>
-                                    <span class="text-[11px] text-gray-300 leading-snug block mt-0.5">${p.valorImoveis}</span>
-                                </div>
-                            </div>
-                            <div class="bg-gray-850/60 p-2 rounded-lg border border-gray-700/30">
-                                <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 block mb-1.5">Posicionamento de Pautas</span>
-                                <div class="space-y-0.5">${pautasHtml}</div>
-                            </div>
+                            <h3 class="text-base font-bold text-white">${p.nome} <span class="text-xs text-blue-400">(${p.partido})</span></h3>
                         </div>
                     </div>
+                    <div class="mt-4 pt-3 border-t border-gray-700 flex justify-between items-center">
+                        <span class="text-xs text-gray-400">Eleições 2026:</span>
+                        <span class="text-xs font-bold text-green-400">Concorrendo</span>
+                    </div>
                 `;
-                parlamentaresGrid.appendChild(card);
-            });
-
-            // Adiciona o monitoramento de rolagem para esconder o indicador no desktop
-            parlamentaresGrid.addEventListener('scroll', () => {
-                if (parlamentaresGrid.scrollTop + parlamentaresGrid.clientHeight >= parlamentaresGrid.scrollHeight - 20) {
-                    scrollIndicator.classList.add('opacity-0');
-                } else {
-                    scrollIndicator.classList.remove('opacity-0');
-                }
+                grid.appendChild(card);
             });
         }
 
-        btnBackToBrazil.addEventListener('click', () => {
-            regionalMapContainer.classList.add('hidden');
-            brazilMapContainer.classList.remove('hidden');
-        });
-        btnBackToStates.addEventListener('click', () => {
-            expressThemesContainer.classList.add('hidden');
-            renderRegionalMap(currentSelectedRegion);
-        });
-        btnBackToExpress.addEventListener('click', () => {
-            advancedThemesContainer.classList.add('hidden');
-            expressThemesContainer.classList.remove('hidden');
-        });
-        btnBackToThemes.addEventListener('click', () => {
-            parlamentaresPbContainer.classList.add('hidden');
-            expressThemesContainer.classList.remove('hidden');
-        });
+        // Simulação de navegação para teste rápido
+        document.querySelectorAll('.map-region').forEach(el => el.addEventListener('click', () => {
+            document.getElementById('brazil-map-container').classList.add('hidden');
+            document.getElementById('parlamentares-pb-container').classList.remove('hidden');
+            renderizarCardsParaiba();
+        }));
     </script>
 </body>
 </html>
